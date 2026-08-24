@@ -1,30 +1,42 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:recovery_app/main.dart';
+import 'package:recovery_app/services/promo_dialog_service.dart';
+import 'package:recovery_app/widgets/app_promotion_dialog.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  TestWidgetsFlutterBinding.ensureInitialized();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('Promotion rotation alternates between the two apps on each launch',
+      () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    final first = await PromoDialogService.getNextPromoApp();
+    expect(first.name, contains('My Prayers'));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    final second = await PromoDialogService.getNextPromoApp();
+    expect(second.name, contains('UltraBlock'));
+
+    final third = await PromoDialogService.getNextPromoApp();
+    expect(third.name, contains('My Prayers'));
+  });
+
+  testWidgets('Promotion dialog renders app info, install and close actions',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: AppPromotionDialog(app: PromoDialogService.promotedApps.first),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('My Prayers - صلاتي وأذكاري'), findsOneWidget);
+    expect(find.text('تثبيت التطبيق الآن مجاناً'), findsOneWidget);
+    expect(find.text('لاحقاً'), findsOneWidget);
+    expect(find.byIcon(Icons.close_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsNWidgets(4));
   });
 }

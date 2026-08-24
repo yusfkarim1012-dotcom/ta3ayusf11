@@ -24,6 +24,7 @@ import 'services/app_lock_service.dart';
 import 'services/app_disguise_service.dart';
 import 'services/supabase_service.dart';
 import 'services/partner_discovery_service.dart';
+import 'services/promo_dialog_service.dart';
 import 'widgets/welcome_message_widget.dart';
 
 @pragma('vm:entry-point')
@@ -191,6 +192,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     _authService = AuthService();
     _checkAuthState();
+    // Show the cross-promotion dialog once per app launch (alternates
+    // between the promoted apps on each launch).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (mounted) {
+          PromoDialogService.showOnAppOpen(context);
+        }
+      });
+    });
   }
 
   Future<void> _checkAuthState() async {
